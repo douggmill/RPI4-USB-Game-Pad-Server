@@ -1,11 +1,15 @@
 #### RPI4 USB Controller Server ****
 
 import time # python standard module
+from time import sleep # python standard modul
 from evdev import list_devices, InputDevice, categorize, ecodes # pip install evdev
 import evdev # pip install evdev
 from select import select # python standard module
 import socket # pip install socket
 import configparser #pip install configparser
+from threading import * #python standard module
+
+port=8000
 connected = False
 P1connected = False
 P2connected = False
@@ -18,30 +22,59 @@ P1name = config['Player1']['name']
 P2name = config['Player2']['name']
 P3name = config['Player3']['name']
 P4name = config['Player4']['name']
-    
+
 
 def connectSocket():
-    global connect, connected, sendSocket, sock, P1connected, P2connected, P3connected, P4connected
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('192.168.8.105', 8888))
-    sock.listen()
-    connect, addr = sock.accept()
-    sendSocket=""
-    connected = True
-    P1connected = False
-    P2connected = False
-    P3connected = False
-    P4connected = False
+    global connect, connected, sendSocket, sock, P1connected, P2connected, P3connected, P4connected, port
+    while connected == False:
+        try:
+            #print('attempt reconnect')
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            #sock.bind((socket.gethostname(), 8888))
+            print(socket.gethostname())
+            sock.bind(('192.168.8.105', port))
+            sock.listen(1) # only accept one client at a time
+            connect, addr = sock.accept() # connect to a client
+            sendSocket=""
+            connected = True
+            P1connected = False
+            P2connected = False
+            P3connected = False
+            P4connected = False
+        except:
+            port=port+1 # if connection is hung up try reconnect on new port
+            if port >= port+2: # don't try too many ports
+                port=port-2
+            try:
+                sock.shutdown(1)
+                sock.close()
+            except:
+                sock.close()
+
 connectSocket()
 
-def evdevPaths():
+def sendPing(): # prevent hang ups
+    global connected, connect
+    while connected == True:
+        try:
+            connect.send('PING'.encode()) # PING to keep connection alive for client to know if server is disconnected
+            sleep(2)
+        except:
+            connected = False
+    return
+
+def pingThread():
+    global t1
+    t1=Thread(target=sendPing)
+    t1.start()
+    return
+
+def evdevPaths(): # connect gamepads, more robust connection is needed for multiplayer
     global devices, paths, P1name, P2name, P3name, P4name, P1connected, P2connected, P3connected, P4connected
     devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
     paths=[]
     for device in devices:
         print(device.path, device.name, device.phys)
-        #print(P1connected)
-        #print(devices)
         if P1name == device.name and P1connected==False:
             paths.append(device.path)
             print('found P1')
@@ -62,7 +95,6 @@ def evdevPaths():
             print('found P4')
             P4connected=True
             #print(device.capabilities()
-
     devices = map(InputDevice, (paths))
     devices = {dev.fd: dev for dev in devices}
     i=1
@@ -71,6 +103,7 @@ def evdevPaths():
         #print(playerKey)
         connect.send(playerKey.encode())
         i+=1
+    pingThread() # start PING when controllers are connected
 evdevPaths()
 
 def sendMsg():
@@ -109,8 +142,6 @@ while True:
         try:
             sendMsg()
         except:
-            print("Server not connected")
             connected = False
-            pass
-s.close
 
+s.close
