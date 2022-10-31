@@ -1,0 +1,8 @@
+[Player1]
+name=SWITCH CO.,LTD. Controller (Dinput)
+[Player2]
+name=SWITCH CO.,LTD. Controller (Dinput)
+[Player3]
+name=Generic X-Box pad
+[Player4]
+name=
