@@ -1,4 +1,11 @@
-#### RPI4 USB Controller Server ****
+#### RPI4 USB Controller Server ####
+#### if you are going to use xbox controllers
+#### choose a xbox driver to install
+#### sudo apt install xpad
+#### or
+#### sudo apt install xinput
+#### xpad is my prefered (LEDs and Shock is handled better)
+#### xpadneo hasn't been observed yet
 
 import time # python standard module
 from time import sleep # python standard modul
@@ -145,3 +152,12 @@ while True:
             connected = False
 
 s.close
+
+#### To Do List:
+# make GUI
+# incorporated 4 players
+# use xbox controllers
+# add button mapping and configs
+# try to use device.capabilities() to convert all analog to the same format
+# incorporate keybd and mouse
+# either fix player reconnection or send all events and sort it out on client side.
